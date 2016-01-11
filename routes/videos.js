@@ -143,10 +143,27 @@ videosRouter.route('/:id')
             });
     })
     .patch(function(req,res,next) {
-        // TODO replace these lines by correct code with mongoose/mongoDB
-        var err = new Error('Unimplemented method!');
-        err.status = 500;
-        next(err);
+        res.locals.processed = true;
+        Video.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body, { new: true })
+            .exec()
+            .then(function successHandler(result) {
+                if (result) {
+                    res.locals.items = result;
+                } else {
+                    res.locals.items = {
+                        code: 404,
+                        message: "No Video exists with this ID"
+                    };
+                    res.status(404);
+                }
+            }).then(next, function errorHandler(error) {
+                res.status(500);
+                res.locals.items = {
+                    code: 500,
+                    message: error.message
+                };
+                next();
+            });
     })
 
     .all(function(req, res, next) {
