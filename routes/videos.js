@@ -16,6 +16,7 @@
 var express = require('express');
 var logger = require('debug')('me2u5:videos');
 
+var ObjectId = require('mongoose').Types.ObjectId;
 var Video = require('../models/video');
 
 var videosRouter = express.Router();
@@ -53,7 +54,7 @@ videosRouter.route('/')
                     error.code = 400;
                     res.locals.items = error;
                 }
-        ).then(next);
+            ).then(next);
     })
     .all(function(req, res, next) {
         if (res.locals.processed) {
@@ -68,10 +69,26 @@ videosRouter.route('/')
 
 videosRouter.route('/:id')
     .get(function(req, res,next) {
-        // TODO replace store and use mongoose/MongoDB
-        // res.locals.items = store.select('videos', req.params.id);
         res.locals.processed = true;
-        next();
+        Video.findOne({ _id: ObjectId(req.params.id) })
+            .then(
+                function successHandler(result) {
+                    if (result) {
+                        res.locals.items = result;
+                    } else {
+                        res.locals.items = {
+                            code: 404,
+                            message: "No Video exists with this ID"
+                        };
+                        res.status(404);
+                    }
+                },
+                function errorHandler(error) {
+                    res.status(500);
+                    //error.code = 500;
+                    res.locals.items = error;
+                }
+            ).then(next);
     })
     .put(function(req, res,next) {
         var id = parseInt(req.params.id);
