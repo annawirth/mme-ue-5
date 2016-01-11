@@ -16,13 +16,13 @@
 var express = require('express');
 var logger = require('debug')('me2u5:videos');
 
-// TODO add here your require for your own model file
+var Video = require('../models/video');
 
-var videos = express.Router();
+var videosRouter = express.Router();
 
 
 // routes **********************
-videos.route('/')
+videosRouter.route('/')
     .get(function(req, res, next) {
         // TODO replace store and use mongoose/MongoDB
         // res.locals.items = store.select('videos');
@@ -30,16 +30,24 @@ videos.route('/')
         next();
     })
     .post(function(req,res,next) {
-        req.body.timestamp = new Date().getTime();
-        // TODO replace store and use mongoose/MongoDB
-        // var id = store.insert(storeKey, req.body);
+        var video = new Video(req.body);
 
-        res.status(201);
-
-        // TODO replace store and use mongoose/MongoDB
-        // res.locals.items = store.select(storeKey, id);
         res.locals.processed = true;
-        next();
+
+        video.save()
+            .then(
+                function successHandler(result) {
+                    res.status(201);
+                    res.locals.items = result;
+                    next();
+                },
+                function errorHandler(error) {
+                    res.status(400);
+                    error.code = 400;
+                    res.locals.items = error;
+                    next();
+                }
+            );
     })
     .all(function(req, res, next) {
         if (res.locals.processed) {
@@ -52,7 +60,7 @@ videos.route('/')
         }
     });
 
-videos.route('/:id')
+videosRouter.route('/:id')
     .get(function(req, res,next) {
         // TODO replace store and use mongoose/MongoDB
         // res.locals.items = store.select('videos', req.params.id);
@@ -112,7 +120,7 @@ videos.route('/:id')
 
 // this middleware function can be used, if you like or remove it
 // it looks for object(s) in res.locals.items and if they exist, they are send to the client as json
-videos.use(function(req, res, next){
+videosRouter.use(function(req, res, next){
     // if anything to send has been added to res.locals.items
     if (res.locals.items) {
         // then we send it as json and remove it
@@ -125,4 +133,4 @@ videos.use(function(req, res, next){
     }
 });
 
-module.exports = videos;
+module.exports = videosRouter;
