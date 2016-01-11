@@ -24,10 +24,18 @@ var videosRouter = express.Router();
 // routes **********************
 videosRouter.route('/')
     .get(function(req, res, next) {
-        // TODO replace store and use mongoose/MongoDB
-        // res.locals.items = store.select('videos');
         res.locals.processed = true;
-        next();
+        Video.find({})
+            .then(
+                function successHandler(result) {
+                    res.locals.items = result;
+                },
+                function errorHandler(error) {
+                    res.status(500);
+                    error.code = 500;
+                    res.locals.items = error;
+                }
+            ).then(next);
     })
     .post(function(req,res,next) {
         var video = new Video(req.body);
@@ -39,15 +47,13 @@ videosRouter.route('/')
                 function successHandler(result) {
                     res.status(201);
                     res.locals.items = result;
-                    next();
                 },
                 function errorHandler(error) {
                     res.status(400);
                     error.code = 400;
                     res.locals.items = error;
-                    next();
                 }
-            );
+        ).then(next);
     })
     .all(function(req, res, next) {
         if (res.locals.processed) {
