@@ -30,13 +30,15 @@ videosRouter.route('/')
             .then(
                 function successHandler(result) {
                     res.locals.items = result;
-                },
-                function errorHandler(error) {
-                    res.status(500);
-                    error.code = 500;
-                    res.locals.items = error;
                 }
-            ).then(next);
+            ).then(next, function errorHandler(error) {
+                res.status(500);
+                res.locals.items = {
+                    code: 500,
+                    message: error.message
+                };
+                next();
+            });
     })
     .post(function(req,res,next) {
         var video = new Video(req.body);
@@ -54,7 +56,14 @@ videosRouter.route('/')
                     error.code = 400;
                     res.locals.items = error;
                 }
-            ).then(next);
+            ).then(next, function errorHandler(error) {
+                res.status(500);
+                res.locals.items = {
+                    code: 500,
+                    message: error.message
+                };
+                next();
+            });
     })
     .all(function(req, res, next) {
         if (res.locals.processed) {
@@ -82,13 +91,15 @@ videosRouter.route('/:id')
                         };
                         res.status(404);
                     }
-                },
-                function errorHandler(error) {
-                    res.status(500);
-                    //error.code = 500;
-                    res.locals.items = error;
                 }
-            ).then(next);
+            ).then(next, function errorHandler(error) {
+                res.status(500);
+                res.locals.items = {
+                    code: 500,
+                    message: error.message
+                };
+                next();
+            });
     })
     .put(function(req, res,next) {
         var id = parseInt(req.params.id);
@@ -107,20 +118,29 @@ videosRouter.route('/:id')
         }
     })
     .delete(function(req,res,next) {
-        var id = parseInt(req.params.id);
-
-        // TODO replace store and use mongoose/MongoDB
-        // store.remove(storeKey, id);
-
-        // ...
-        //    var err = new Error('No element to delete with id ' + req.params.id);
-        //    err.status = codes.notfound;
-        //    next(err);
-        // ...
         res.locals.processed = true;
-        next();
-
-
+        Video.findOne({ _id: ObjectId(req.params.id) })
+            .then(
+                function successHandler(result) {
+                    if (result) {
+                        result.remove();
+                        res.status(204);
+                    } else {
+                        res.locals.items = {
+                            code: 404,
+                            message: "No Video exists with this ID"
+                        };
+                        res.status(404);
+                    }
+                }
+            ).then(next, function errorHandler(error) {
+                res.status(500);
+                res.locals.items = {
+                    code: 500,
+                    message: error.message
+                };
+                next();
+            });
     })
     .patch(function(req,res,next) {
         // TODO replace these lines by correct code with mongoose/mongoDB
