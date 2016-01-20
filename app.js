@@ -72,6 +72,6 @@ app.listen(3000, function(err) {
         debug('Error on startup, ',err);
     }
     else {
-        debug('Listening on port 3000');
+        console.log('Listening on port 3000');
     }
 });
